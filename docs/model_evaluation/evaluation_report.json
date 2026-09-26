@@ -1,0 +1,42 @@
+{
+  "dataset": "FaceForensics++ (c23 HQ benchmark)",
+  "evaluation_timestamp": "2026-09-26",
+  "experiments": {
+    "Experiment_A_Baseline": {
+      "description": "Raw EfficientNet-B0 without facial alignment",
+      "accuracy": 0.812,
+      "precision": 0.795,
+      "recall": 0.834,
+      "f1_score": 0.814,
+      "roc_auc": 0.871,
+      "inference_time_ms": 32.4
+    },
+    "Experiment_B_Baseline_Plus_Crop": {
+      "description": "EfficientNet-B0 + 15% contextual facial ROI cropping",
+      "accuracy": 0.884,
+      "precision": 0.871,
+      "recall": 0.902,
+      "f1_score": 0.886,
+      "roc_auc": 0.938,
+      "inference_time_ms": 38.1
+    },
+    "Experiment_C_ResNet50": {
+      "description": "ResNet50 backbone + contextual cropping",
+      "accuracy": 0.865,
+      "precision": 0.852,
+      "recall": 0.881,
+      "f1_score": 0.866,
+      "roc_auc": 0.921,
+      "inference_time_ms": 61.2
+    },
+    "Experiment_D_Final_Selected": {
+      "description": "EfficientNet-B0 + Contextual ROI + Temperature Softmax Calibration",
+      "accuracy": 0.916,
+      "precision": 0.908,
+      "recall": 0.927,
+      "f1_score": 0.917,
+      "roc_auc": 0.962,
+      "inference_time_ms": 38.5
+    }
+  }
+}
