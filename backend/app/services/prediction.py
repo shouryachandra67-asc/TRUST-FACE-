@@ -53,16 +53,17 @@ class PipelineOrchestrator:
         # Step 3: Resize and PyTorch Normalization
         input_tensor, rgb_face_crop = preprocessor.preprocess_for_inference(face_roi)
 
-        # Step 4: Run AI Authenticity Model
-        scores, verdict, confidence = model_adapter.predict(input_tensor)
+        # Step 4: Run AI Authenticity & Forensic Model
+        # Passes both the normalized tensor and high-res face crop for multimodal analysis
+        scores, verdict, confidence = model_adapter.predict(input_tensor, face_bgr=face_roi)
 
-        # Check blur variance against uncertainty threshold
+        # Only trigger UNCERTAIN if the image is severely blurred (variance < 10.0)
         uncertain_reason = None
-        if blur_variance < 60.0 and verdict != "MODEL NOT CONFIGURED":
+        if blur_variance < 10.0 and verdict != "MODEL NOT CONFIGURED":
             verdict = "UNCERTAIN"
-            uncertain_reason = "Image blur level exceeds acceptable threshold for reliable micro-texture inspection."
-            scores["uncertain"] = max(scores.get("uncertain", 0.0), 0.70)
-            confidence = min(confidence, 0.45)
+            uncertain_reason = "Image sharpness is critically degraded for micro-texture analysis."
+            scores["uncertain"] = 0.65
+            confidence = 0.35
 
         # Step 5: Explainable AI (Grad-CAM)
         heatmap_base64 = None
@@ -95,7 +96,7 @@ class PipelineOrchestrator:
             scores=ScoreBreakdown(
                 real=scores["real"],
                 manipulation=scores["manipulation"],
-                uncertain=scores["uncertain"],
+                uncertain=scores.get("uncertain", 0.0),
             ),
             processing_time_ms=round(elapsed_ms, 2),
             explanation_available=explanation_available,
