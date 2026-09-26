@@ -56,6 +56,7 @@ class PipelineOrchestrator:
         # Step 4: Run AI Authenticity & Forensic Model
         # Passes both the normalized tensor and high-res face crop for multimodal analysis
         scores, verdict, confidence = model_adapter.predict(input_tensor, face_bgr=face_roi)
+        print(f"[TRUSTFACE INFERENCE] Bounding Box: {target_box} | Blur Variance: {round(blur_variance, 2)} | Scores: {scores} | Final Verdict: {verdict} ({confidence})", flush=True)
 
         # Only trigger UNCERTAIN if the image is severely blurred (variance < 10.0)
         uncertain_reason = None
