@@ -17,7 +17,6 @@ async def analyze_image(file: UploadFile = File(...)):
 
     # 2. Validate format, magic bytes, and rasterize to OpenCV matrix
     image_bgr = validate_image_bytes(file_bytes)
-    cv2.imwrite("debug_incoming.jpg", image_bgr)
 
     # 3. Execute authoritative end-to-end inspection pipeline
     response = deepfake_service.analyze(image_bgr)

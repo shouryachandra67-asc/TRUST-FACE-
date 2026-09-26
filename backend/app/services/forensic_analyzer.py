@@ -8,7 +8,8 @@ class DigitalForensicAnalyzer:
     """
     Multimodal Digital Media Forensic Engine.
     Implements physical optical lens consistency, 2D FFT periodic grid detection,
-    facial boundary seam inspection (FaceSwap / DeepFaceLab), and chrominance consistency.
+    Natural Scene Statistics (NSS) 1/f radial power law decay, facial boundary seam inspection,
+    and cross-channel chrominance harmony.
     """
 
     @staticmethod
@@ -16,6 +17,8 @@ class DigitalForensicAnalyzer:
         """
         Detects periodic checkerboard grid artifacts and high-frequency harmonic spikes
         injected by GAN transposed convolutions and diffusion autoencoders.
+        Excludes cardinal axes (natural scene horizontal/vertical edges) and evaluates
+        Natural Scene Statistics (NSS) radial power-law decay.
         Returns a manipulation risk score in [0.0, 1.0].
         """
         gray = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2GRAY)
@@ -26,34 +29,56 @@ class DigitalForensicAnalyzer:
         f_shift = np.fft.fftshift(f_transform)
         magnitude = np.log1p(np.abs(f_shift))
 
-        # Define high-frequency annular zone (40% to 85% radius)
         cy, cx = h // 2, w // 2
         y, x = np.ogrid[:h, :w]
-        r = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
+        r = np.sqrt((x - cx) ** 2 + (y - cy) ** 2).astype(np.int32)
         max_r = min(cx, cy)
-        annulus = (r > max_r * 0.40) & (r < max_r * 0.85)
 
+        if max_r < 10:
+            return 0.05
+
+        # 1. Natural Scene Statistics: 1/f radial power law linearity (log-log space)
+        radial_mean = np.zeros(max_r)
+        for i in range(1, max_r):
+            mask = (r == i)
+            if np.any(mask):
+                radial_mean[i] = np.mean(magnitude[mask])
+
+        freqs = np.arange(1, max_r)
+        valid = (radial_mean[1:] > 0)
+        if np.sum(valid) > 10:
+            log_f = np.log10(freqs[valid])
+            log_p = radial_mean[1:][valid]
+            slope, intercept = np.polyfit(log_f, log_p, 1)
+            residuals = log_p - (slope * log_f + intercept)
+            r_squared = float(1.0 - (np.var(residuals) / (np.var(log_p) + 1e-6)))
+        else:
+            r_squared = 0.95
+
+        # 2. Discrete periodic harmonic spikes (off-axis to exclude natural horizontal/vertical edges)
+        # Exclude cardinal axes (+/- 3 pixels around horizontal and vertical centerlines)
+        axis_mask = (np.abs(x - cx) <= 3) | (np.abs(y - cy) <= 3)
+        annulus = (r > max_r * 0.20) & (r < max_r * 0.85) & (~axis_mask)
         annulus_vals = magnitude[annulus]
+
         if len(annulus_vals) == 0:
             return 0.05
 
         mean_val = float(np.mean(annulus_vals))
         std_val = float(np.std(annulus_vals)) + 1e-6
 
-        # Count isolated outlier spikes (> 3.5 standard deviations above radial ring)
-        spike_ratio = float(np.sum(annulus_vals > (mean_val + 3.5 * std_val))) / len(annulus_vals)
+        # Spikes > 4.8 standard deviations away from the annulus baseline
+        spike_ratio = float(np.sum(annulus_vals > (mean_val + 4.8 * std_val))) / max(1, len(annulus_vals))
 
-        # Real optical camera photos have smooth radial decay with spike_ratio near 0.0
-        # AI generated media with checkerboard grid artifacts has spike_ratio > 0.0003
-        if spike_ratio > 0.0008:
-            score = 0.85 + min(0.15, (spike_ratio - 0.0008) * 100.0)
-        elif spike_ratio > 0.0002:
-            score = 0.45 + (spike_ratio - 0.0002) * 600.0
-        else:
-            # Genuine smooth spectrum
-            score = max(0.04, spike_ratio * 200.0)
+        # Genuine optical photos adhere to smooth radial decay (r_squared > 0.90) and spike_ratio ~ 0.0
+        # AI generated media exhibits off-axis harmonic peaks (spike_ratio > 0.001) or broken radial decay (r_squared < 0.82)
+        fft_risk = 0.05
+        if spike_ratio > 0.001:
+            fft_risk += min(0.65, (spike_ratio - 0.001) * 350.0 + 0.30)
+        if r_squared < 0.85:
+            fft_risk += min(0.30, (0.85 - r_squared) * 1.8)
 
-        return float(np.clip(score, 0.0, 1.0))
+        return float(np.clip(fft_risk, 0.0, 1.0))
 
     @staticmethod
     def analyze_boundary_seams(face_bgr: np.ndarray) -> float:
@@ -88,13 +113,13 @@ class DigitalForensicAnalyzer:
         # In deepfakes, the synthetic border mask creates sharp artificial gradient seams.
         boundary_ratio = border_grad / inner_grad
 
-        if boundary_ratio > 1.4:
-            seam_score = 0.80 + min(0.20, (boundary_ratio - 1.4) * 0.4)
-        elif boundary_ratio > 1.1:
-            seam_score = 0.45 + (boundary_ratio - 1.1) * 1.1
+        if boundary_ratio > 1.35:
+            seam_score = 0.75 + min(0.25, (boundary_ratio - 1.35) * 0.6)
+        elif boundary_ratio > 1.18:
+            seam_score = 0.35 + (boundary_ratio - 1.18) * 2.0
         else:
             # Natural face gradient distribution
-            seam_score = max(0.05, (boundary_ratio - 0.5) * 0.2)
+            seam_score = max(0.04, (boundary_ratio - 0.5) * 0.1)
 
         return float(np.clip(seam_score, 0.0, 1.0))
 
@@ -116,12 +141,12 @@ class DigitalForensicAnalyzer:
         color_delta = abs(cr_var - cb_var) / (cr_var + cb_var + 1e-6)
 
         # Natural photos have well-balanced Cr/Cb chromatic dispersion
-        if color_delta > 0.82:
-            return 0.75 + min(0.25, (color_delta - 0.82) * 1.5)
-        elif color_delta > 0.65:
-            return 0.35 + (color_delta - 0.65) * 2.0
+        if color_delta > 0.85:
+            return 0.75 + min(0.25, (color_delta - 0.85) * 1.6)
+        elif color_delta > 0.70:
+            return 0.35 + (color_delta - 0.70) * 2.5
         else:
-            return max(0.05, color_delta * 0.15)
+            return max(0.04, color_delta * 0.12)
 
     def evaluate_face_authenticity(self, face_bgr: np.ndarray, deep_feature_norm: float) -> Tuple[float, float, Dict[str, float]]:
         """
@@ -145,14 +170,14 @@ class DigitalForensicAnalyzer:
         )
         manipulation_index = 0.55 * weighted_risk + 0.45 * max_single_risk
 
-        # If manipulation index is low (< 0.25), image exhibits natural optical camera properties:
-        # Returns high REAL confidence (88% - 96%)
+        # If manipulation index is low (< 0.20), image exhibits natural optical camera properties:
+        # Returns high REAL confidence (90% - 96%)
         if manipulation_index < 0.20:
             real_prob = 0.90 + (0.20 - manipulation_index) * 0.30
             fake_prob = 1.0 - real_prob
-        elif manipulation_index < 0.32:
+        elif manipulation_index < 0.30:
             # Genuine photo with slight compression
-            real_prob = 0.80 + (0.32 - manipulation_index) * 0.80
+            real_prob = 0.80 + (0.30 - manipulation_index) * 1.0
             fake_prob = 1.0 - real_prob
         elif manipulation_index > 0.50:
             # Strong synthetic artifacts / deepfake seams
@@ -160,7 +185,7 @@ class DigitalForensicAnalyzer:
             real_prob = 1.0 - fake_prob
         else:
             # Borderline / anomalous region
-            fake_prob = 0.70 + (manipulation_index - 0.32) * 0.80
+            fake_prob = 0.65 + (manipulation_index - 0.30) * 0.90
             real_prob = 1.0 - fake_prob
 
         real_prob = float(np.clip(real_prob, 0.02, 0.98))
