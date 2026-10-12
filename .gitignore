@@ -50,3 +50,8 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
+
+# Database & Test artifacts
+*.db
+*.sqlite3
+.pytest_cache/

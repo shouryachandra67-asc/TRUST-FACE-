@@ -5,21 +5,21 @@
     background-color: #070b14;
     color: #f1f5f9;
     min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
   }
 }
 
-/* Custom Scrollbar for sleek cybersecurity feel */
+/* Custom Scrollbar for cybersecurity theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b1120;
+  background: #080e1a;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -28,20 +28,64 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #0ea5e9;
 }
 
-/* Glassmorphism styling */
+/* Glassmorphism and Cybersecurity panels */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(51, 65, 85, 0.5);
+  background: rgba(11, 19, 38, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(30, 41, 59, 0.7);
 }
 
 .glass-panel-glow {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.15);
+  background: rgba(11, 23, 48, 0.82);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  box-shadow: 0 0 30px -5px rgba(6, 182, 212, 0.15);
+}
+
+.glass-panel-glow-cyan {
+  background: rgba(8, 20, 40, 0.85);
+  border: 1px solid rgba(0, 242, 254, 0.4);
+  box-shadow: 0 0 25px -4px rgba(0, 242, 254, 0.2);
+}
+
+/* Subtle cyber background grid */
+.cyber-grid {
+  background-size: 36px 36px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+/* Radial spotlight effect */
+.cyber-radial-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.12) 0%, rgba(7, 11, 20, 0) 65%);
+}
+
+/* Status Badges */
+.status-pill-verified {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.status-pill-rejected {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.status-pill-review {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.status-pill-incomplete {
+  background: rgba(100, 116, 139, 0.12);
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  color: #94a3b8;
 }

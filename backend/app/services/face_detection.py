@@ -5,9 +5,12 @@ from ..config import settings
 
 class FaceDetectionService:
     def __init__(self):
-        # Load high-accuracy OpenCV Haar Cascade for Frontal Face Detection
+        # Load high-accuracy OpenCV Haar Cascades
         cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
         self.face_cascade = cv2.CascadeClassifier(cascade_path)
+        
+        alt2_path = cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml"
+        self.alt2_cascade = cv2.CascadeClassifier(alt2_path)
         
         # Profile cascade for secondary verification if needed
         profile_path = cv2.data.haarcascades + "haarcascade_profileface.xml"
@@ -24,7 +27,7 @@ class FaceDetectionService:
         # Histogram equalization to enhance contrast in poorly illuminated scenes
         gray_eq = cv2.equalizeHist(gray)
 
-        # Detect frontal faces
+        # 1. Detect frontal faces with default cascade
         frontal_faces = self.face_cascade.detectMultiScale(
             gray_eq,
             scaleFactor=1.1,
@@ -35,16 +38,39 @@ class FaceDetectionService:
 
         detected_boxes = list(frontal_faces) if len(frontal_faces) > 0 else []
 
-        # If zero frontal detected, check profile cascade
-        if len(detected_boxes) == 0:
+        # 2. If zero detected, try alt2 cascade with higher sensitivity
+        if len(detected_boxes) == 0 and not self.alt2_cascade.empty():
+            alt2_faces = self.alt2_cascade.detectMultiScale(
+                gray_eq,
+                scaleFactor=1.1,
+                minNeighbors=3,
+                minSize=(settings.MIN_FACE_SIZE, settings.MIN_FACE_SIZE),
+                flags=cv2.CASCADE_SCALE_IMAGE,
+            )
+            if len(alt2_faces) > 0:
+                detected_boxes = list(alt2_faces)
+
+        # 3. If still zero, check profile cascade
+        if len(detected_boxes) == 0 and not self.profile_cascade.empty():
             profile_faces = self.profile_cascade.detectMultiScale(
                 gray_eq,
                 scaleFactor=1.1,
-                minNeighbors=5,
+                minNeighbors=4,
                 minSize=(settings.MIN_FACE_SIZE, settings.MIN_FACE_SIZE),
             )
             if len(profile_faces) > 0:
                 detected_boxes = list(profile_faces)
+
+        # 4. If still zero, try alt2 with tighter scaling (scaleFactor=1.05, minNeighbors=2)
+        if len(detected_boxes) == 0 and not self.alt2_cascade.empty():
+            alt2_sensitive = self.alt2_cascade.detectMultiScale(
+                gray_eq,
+                scaleFactor=1.05,
+                minNeighbors=2,
+                minSize=(settings.MIN_FACE_SIZE, settings.MIN_FACE_SIZE),
+            )
+            if len(alt2_sensitive) > 0:
+                detected_boxes = list(alt2_sensitive)
 
         # Filter out overlapping sub-boxes using non-maximum suppression (NMS)
         if len(detected_boxes) > 1:

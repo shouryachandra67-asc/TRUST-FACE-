@@ -168,8 +168,7 @@ class DigitalForensicAnalyzer:
         sobely = cv2.Sobel(inner_gray, cv2.CV_32F, 0, 1, ksize=3)
         grad_mag = np.sqrt(sobelx**2 + sobely**2)
         grad_p95 = float(np.percentile(grad_mag, 95))
-        grad_p50 = float(np.percentile(grad_mag, 50))
-        grad_contrast = grad_p95 / (grad_p50 + 1e-6)
+        grad_contrast = grad_p95 / max(1.0, grad_p50)
 
         if grad_contrast > 9.0:
             texture_score = 0.65 + min(0.30, (grad_contrast - 9.0) * 0.15)

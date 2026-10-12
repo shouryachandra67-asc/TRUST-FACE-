@@ -32,6 +32,28 @@ class Settings:
     UNCERTAINTY_MARGIN: float = float(os.getenv("UNCERTAINTY_MARGIN", "0.15"))
     MIN_FACE_SIZE: int = 40 # Minimum bounding box width/height in pixels
 
+    # Video Analysis
+    ALLOWED_VIDEO_EXTENSIONS: list[str] = ["mp4", "avi", "mov", "webm"]
+    MAX_VIDEO_SIZE_MB: int = int(os.getenv("MAX_VIDEO_SIZE_MB", "50"))
+    VIDEO_SAMPLE_FPS: int = int(os.getenv("VIDEO_SAMPLE_FPS", "2"))
+    MAX_VIDEO_FRAMES: int = int(os.getenv("MAX_VIDEO_FRAMES", "30"))
+
+    # Security, JWT & Sessions
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "verityai-production-super-secret-key-change-in-prod-2026")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # 24 hours
+    LIVENESS_SESSION_TTL_SECONDS: int = 300 # 5 minutes
+
+    # Biometric & Fraud Thresholds
+    FACE_MATCH_THRESHOLD: float = float(os.getenv("FACE_MATCH_THRESHOLD", "0.65"))
+    FACE_MATCH_REVIEW_THRESHOLD: float = float(os.getenv("FACE_MATCH_REVIEW_THRESHOLD", "0.52"))
+    LIVENESS_PASS_SCORE: float = float(os.getenv("LIVENESS_PASS_SCORE", "0.70"))
+    DOCUMENT_TAMPER_THRESHOLD: float = float(os.getenv("DOCUMENT_TAMPER_THRESHOLD", "0.35"))
+
+    # Privacy & Retention
+    DATA_RETENTION_HOURS: int = int(os.getenv("DATA_RETENTION_HOURS", "24"))
+    ZERO_PERSISTENCE_MODE: bool = os.getenv("ZERO_PERSISTENCE_MODE", "false").lower() in ("true", "1", "yes")
+
     # Audit Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR}/backend/trustface_audit.db")
 
